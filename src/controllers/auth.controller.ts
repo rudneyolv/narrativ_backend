@@ -1,61 +1,24 @@
 import { Request, Response } from "express";
 import { object, z } from "zod";
+import bcrypt from "bcrypt";
 import pool from "../db/connection";
+import { authService } from "../services/auth.service";
+import { registerSchema } from "../schemas/registerSchema";
+import createHttpError from "http-errors";
+import { StatusCodes } from "http-status-codes";
+
+const authServiceInstance = new authService();
 
 export class AuthController {
   public async registerUser(req: Request, res: Response): Promise<void> {
-    const registerSchema = z
-      .object({
-        username: z
-          .string()
-          .min(2, {
-            message: "Username must be at least 2 characters.",
-          })
-          .max(50, {
-            message: "Username must be at most 50 characters.",
-          }),
+    const { username, email, password, confirm_password } = req.body;
 
-        email: z
-          .string()
-          .min(2, {
-            message: "Email must be at least 2 characters.",
-          })
-          .email({
-            message: "Invalid email address.",
-          })
-          .max(100, {
-            message: "Email must be at most 100 characters.",
-          }),
-
-        password: z
-          .string()
-          .min(8, {
-            message: "Password must be at least 8 characters.",
-          })
-          .max(100, {
-            message: "Password must be at most 100 characters.",
-          })
-          .regex(/[A-Z]/, {
-            message: "Password must contain at least one uppercase letter.",
-          })
-          .regex(/[a-z]/, {
-            message: "Password must contain at least one lowercase letter.",
-          })
-          .regex(/[0-9]/, {
-            message: "Password must contain at least one number.",
-          })
-          .regex(/[\W_]/, {
-            message: "Password must contain at least one special character.",
-          }),
-
-        confirm_password: z.string(),
-      })
-      .refine((data) => data.password === data.confirm_password, {
-        message: "Passwords don't match.",
-        path: ["confirm_password"],
-      });
-
-    const validationResult = registerSchema.safeParse(req.body);
+    const validationResult = registerSchema.safeParse({
+      username,
+      email,
+      password,
+      confirm_password,
+    });
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.map((err) => ({
@@ -68,17 +31,28 @@ export class AuthController {
         message: "Validation failed",
         errors,
       });
+
+      return;
     }
 
-    const { confirm_password, ...userWithoutConfirm } = req.body;
-    const values = Object.values(userWithoutConfirm);
+    try {
+      await authServiceInstance.createUser({ username, email, password });
 
-    const query = `
-      INSERT INTO users (username, email, password)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `;
+      res.status(StatusCodes.CREATED).json({
+        success: true,
+        message: "User successfully created",
+      });
+    } catch (error: unknown) {
+      if (error instanceof createHttpError.HttpError) {
+        res.status(error.status).json({
+          success: false,
+          errors: [
+            { message: error.message, field: error.field, code: error.code },
+          ],
+        });
 
-    const result = await pool.query(query, values);
+        console.error("Error during user registration:", error);
+      }
+    }
   }
 }
