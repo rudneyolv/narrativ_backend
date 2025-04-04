@@ -1,3 +1,5 @@
+/** @format */
+
 import express, { Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
 import cors from "cors";
@@ -34,4 +36,4 @@ app.get("/", (req: Request, res: Response) => {
   res.send("hello world com TS");
 });
 
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);

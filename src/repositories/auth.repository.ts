@@ -1,8 +1,10 @@
+/** @format */
+
 import pool from "../db/connection";
 
 export class authRepository {
   public async insertUser(user: any): Promise<any> {
-    if (Array.isArray(user)) {
+    if (!Array.isArray(user)) {
       throw new Error("Expected an array of values");
     }
 

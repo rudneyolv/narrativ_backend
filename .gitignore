@@ -1,0 +1,42 @@
+# Arquivos do Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Ambiente de desenvolvimento
+.env
+.env.local
+.env.development
+.env.test
+
+# Logs e diretórios de cache
+logs/
+*.log
+.pnpm-debug.log
+
+# Diretórios de build e dependências
+dist/
+build/
+.coverage/
+.nyc_output/
+
+# Configurações do IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Arquivos de configuração local
+*.local
+
+# Arquivos do sistema operacional
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Arquivos do usuário
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

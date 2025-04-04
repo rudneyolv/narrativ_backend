@@ -1,0 +1,11 @@
+# @format
+
+{
+  "printWidth": 100,
+  "singleLine": true,
+  "breakBeforeMethodChain": false,
+  "braceStyle": "none",
+  "singleEmptyLine": true,
+  "insertPragma": true,
+  "methodChain": { "break": "none" },
+}
