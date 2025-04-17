@@ -1,7 +1,7 @@
 /** @format */
 
 interface ErrorItem {
-  message: string;
+  message?: string;
   field?: string | number;
 }
 
@@ -9,7 +9,7 @@ interface ErrorItem {
 export const formatError = (message: string, errors: ErrorItem[]) => ({
   success: false,
   message,
-  errors,
+  errors: errors || undefined,
 });
 
 // Retorna: { success: true, message: string, data?: any }
