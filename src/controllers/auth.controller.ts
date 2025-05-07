@@ -7,7 +7,8 @@ import createHttpError from "http-errors";
 import { StatusCodes } from "http-status-codes";
 import { formatError, formatSuccess } from "../utils/formatResponse";
 import { loginSchema } from "../schemas/loginSchema";
-import { userRepository } from "../repositories/user.repository";
+import { fallbackError } from "../constants/errors";
+import { logError } from "../utils/debug/logError";
 
 const authServiceInstance = new authService();
 export class AuthController {
@@ -35,20 +36,13 @@ export class AuthController {
       await authServiceInstance.createUser({ username, email, password });
       return res.status(StatusCodes.CREATED).json(formatSuccess("User successfully created"));
     } catch (error: unknown) {
-      console.error(
-        "🔴 CATCH | 📁 AuthController.registerUser | Error during user registration:",
-        error
-      );
+      logError("AuthController.registerUser", error);
 
       if (error instanceof createHttpError.HttpError) {
         const errorResponse = formatError(error.message, error.errors);
         return res.status(error.status).json(errorResponse);
       } else {
-        const errorResponse = formatError("Internal server error", [
-          { message: "An unexpected error occurred" },
-        ]);
-
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorResponse);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(fallbackError);
       }
     }
   }
@@ -90,20 +84,13 @@ export class AuthController {
         .status(StatusCodes.ACCEPTED)
         .json(formatSuccess("success.user_login", { username: username }));
     } catch (error) {
-      console.error(
-        "🔴 ERROR | 📁 AuthController.loginUser | Error during user registration -",
-        error
-      );
+      logError("AuthController.loginUser", error);
 
       if (error instanceof createHttpError.HttpError) {
         const errorResponse = formatError(error.message, error.errors);
         return res.status(error.status).json(errorResponse);
       } else {
-        const errorResponse = formatError("Internal server error", [
-          { message: "An unexpected error occurred" },
-        ]);
-
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorResponse);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(fallbackError);
       }
     }
   }
