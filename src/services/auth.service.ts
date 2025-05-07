@@ -25,60 +25,87 @@ const userRepositoryInstance = new userRepository();
 
 export class authService {
   public async createUser({ username, email, password }: createUserProps): Promise<void> {
-    const hashedPassword = await hashPassword(password);
-    const values = [username, email, hashedPassword];
-
-    const emailExists = await userRepositoryInstance.findByEmail(email);
-
-    if (emailExists) {
-      throw createHttpError(StatusCodes.BAD_REQUEST, "Email validation failed", {
-        field: "email",
-        field_message: "validation.email_already_exists",
-      });
-    }
-
-    const usernameExists = await userRepositoryInstance.findByUsername(username);
-
-    if (usernameExists) {
-      throw createHttpError(StatusCodes.BAD_REQUEST, "Username validation failed", {
-        field: "username",
-        field_message: "validation.username_already_in_use",
-      });
-    }
-
     try {
+      const hashedPassword = await hashPassword(password);
+      const values = [username, email, hashedPassword];
+
+      const emailExists = await userRepositoryInstance.findByEmail(email);
+
+      if (emailExists) {
+        throw createHttpError(StatusCodes.BAD_REQUEST, {
+          message: "error.email_validation_failed",
+          errors: [
+            {
+              field: "email",
+              field_message: "validation.email_already_exists",
+            },
+          ],
+        });
+      }
+
+      const usernameExists = await userRepositoryInstance.findByUsername(username);
+
+      if (usernameExists) {
+        throw createHttpError(StatusCodes.BAD_REQUEST, {
+          message: "error.username_validation_failed",
+          errors: [
+            {
+              field: "username",
+              field_message: "validation.username_already_in_use",
+            },
+          ],
+        });
+      }
+
       await authRepositoryInstance.insertUser(values);
     } catch (error) {
-      console.error("Error during user creation:", error);
-      throw createHttpError(StatusCodes.BAD_REQUEST, "Error during user creation");
+      throw error;
     }
   }
 
-  public async loginUser({ email, password }: LoginUserProps): Promise<{ token: string }> {
-    const user = await userRepositoryInstance.findByEmail(email);
+  public async loginUser({
+    email,
+    password,
+  }: LoginUserProps): Promise<{ token: string; username: string }> {
+    try {
+      const user = await userRepositoryInstance.findByEmail(email);
 
-    if (!user) {
-      throw createHttpError(StatusCodes.BAD_REQUEST, {
-        field: "email",
-        message: "error.email_not_registered",
-      });
+      if (!user) {
+        throw createHttpError(StatusCodes.BAD_REQUEST, {
+          message: "error.email_not_registered",
+          errors: [
+            {
+              field: "email",
+              field_message: "error.email_not_registered",
+            },
+          ],
+        });
+      }
+
+      if (user.status !== UserStatus.ACTIVE) {
+        throw createHttpError(StatusCodes.BAD_REQUEST, "error.account_not_active");
+      }
+
+      const isValidPassword = await verifyPassword(password, user.password);
+
+      if (!isValidPassword) {
+        throw createHttpError(StatusCodes.BAD_REQUEST, {
+          message: "error.password_validation_failed",
+          errors: [
+            {
+              field: "password",
+              field_message: "error.wrong_password",
+            },
+          ],
+        });
+      }
+
+      const token = generateToken(user.id);
+      const username = user.username;
+
+      return { token, username };
+    } catch (error) {
+      throw error;
     }
-
-    if (user.status !== UserStatus.ACTIVE) {
-      throw createHttpError(StatusCodes.BAD_REQUEST, "error.account_not_active");
-    }
-
-    const isValidPassword = await verifyPassword(password, user.password);
-
-    if (!isValidPassword) {
-      throw createHttpError(StatusCodes.BAD_REQUEST, "error.account_not_active", {
-        field: "password",
-        message: "error.wrong_password",
-      });
-    }
-
-    const token = generateToken(user.id);
-
-    return { token };
   }
 }

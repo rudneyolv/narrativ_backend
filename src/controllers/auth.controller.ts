@@ -7,24 +7,12 @@ import createHttpError from "http-errors";
 import { StatusCodes } from "http-status-codes";
 import { formatError, formatSuccess } from "../utils/formatResponse";
 import { loginSchema } from "../schemas/loginSchema";
-import { userService } from "../services/user.service";
 import { userRepository } from "../repositories/user.repository";
-import { UserStatus } from "../constants/enums";
-import { verifyPassword } from "../utils/hashing";
 
 const authServiceInstance = new authService();
-const userRepositoryInstance = new userRepository();
 export class AuthController {
   public async registerUser(req: Request, res: Response): Promise<Response> {
     const { username, email, password, confirm_password } = req.body;
-
-    if (password !== confirm_password) {
-      const errorResponse = formatError("Password validation failed", [
-        { field: "confirm_password", message: "Passwords do not match" },
-      ]);
-
-      return res.status(StatusCodes.BAD_REQUEST).json(errorResponse);
-    }
 
     const validationResult = registerSchema.safeParse({
       username,
@@ -35,7 +23,7 @@ export class AuthController {
 
     if (validationResult.error) {
       const errors = validationResult.error.errors.map((err) => ({
-        message: err.message,
+        field_message: err.message,
         field: err.path[0],
       }));
 
@@ -47,13 +35,13 @@ export class AuthController {
       await authServiceInstance.createUser({ username, email, password });
       return res.status(StatusCodes.CREATED).json(formatSuccess("User successfully created"));
     } catch (error: unknown) {
-      console.error("Error during user registration:", error);
+      console.error(
+        "🔴 CATCH | 📁 AuthController.registerUser | Error during user registration:",
+        error
+      );
 
       if (error instanceof createHttpError.HttpError) {
-        const errorResponse = formatError(error.message, [
-          { field: error.field ?? undefined, message: error.field_message || error.message },
-        ]);
-
+        const errorResponse = formatError(error.message, error.errors);
         return res.status(error.status).json(errorResponse);
       } else {
         const errorResponse = formatError("Internal server error", [
@@ -74,7 +62,7 @@ export class AuthController {
 
     if (validationResult.error) {
       const errors = validationResult.error.errors.map((err) => ({
-        message: err.message,
+        field_message: err.message,
         field: err.path[0],
       }));
 
@@ -83,24 +71,32 @@ export class AuthController {
     }
 
     try {
-      const { token } = await authServiceInstance.loginUser({ email, password });
+      const { token, username } = await authServiceInstance.loginUser({ email, password });
 
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-        maxAge: 24 * 60 * 60 * 1000, // 1 dia igual no .env
+        maxAge: 10 * 365 * 24 * 60 * 60 * 1000, // 10 anos em milissegundos
       });
 
-      return res.status(StatusCodes.ACCEPTED).json(formatSuccess("success.user_login"));
+      res.cookie("username", username, {
+        httpOnly: false,
+        secure: true,
+        sameSite: "lax",
+      });
+
+      return res
+        .status(StatusCodes.ACCEPTED)
+        .json(formatSuccess("success.user_login", { username: username }));
     } catch (error) {
-      console.error("Error during user registration:", error);
+      console.error(
+        "🔴 ERROR | 📁 AuthController.loginUser | Error during user registration -",
+        error
+      );
 
       if (error instanceof createHttpError.HttpError) {
-        const errorResponse = formatError(error.message, [
-          { field: error.field ?? undefined, message: error.field_message || error.message },
-        ]);
-
+        const errorResponse = formatError(error.message, error.errors);
         return res.status(error.status).json(errorResponse);
       } else {
         const errorResponse = formatError("Internal server error", [
