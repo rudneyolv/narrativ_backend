@@ -7,7 +7,7 @@ export class usersRepository {
   public async findByEmail(email: string): Promise<UserProps | null> {
     const query = `
       SELECT u.username, u.status
-      FROM users
+      FROM users u
       WHERE email = $1 
       LIMIT 1
     `;
