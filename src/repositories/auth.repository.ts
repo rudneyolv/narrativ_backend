@@ -1,6 +1,7 @@
 /** @format */
 
 import pool from "../db/connection";
+import { UserProps } from "../interfaces/users.interfaces";
 
 export class authRepository {
   public async insertUser(user: any): Promise<any> {
@@ -18,15 +19,9 @@ export class authRepository {
     return result;
   }
 
-  public async checkIfEmailExists(email: string): Promise<boolean> {
-    const query = `SELECT 1 FROM Users WHERE email = $1 LIMIT 1`;
+  public async findUserWithPasswordByEmail(email: string): Promise<UserProps | null> {
+    const query = "SELECT * FROM users WHERE email = $1 LIMIT 1";
     const result = await pool.query(query, [email]);
-    return (result as any)?.rowCount > 0;
-  }
-
-  public async checkIfUsernameExists(username: string): Promise<boolean> {
-    const query = `SELECT 1 FROM Users WHERE username = $1 LIMIT 1`;
-    const result = await pool.query(query, [username]);
-    return (result as any)?.rowCount > 0;
+    return result.rows[0] || null;
   }
 }

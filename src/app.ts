@@ -2,6 +2,7 @@
 
 import express, { Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
+import usersRoutes from "./routes/users.routes";
 import cors from "cors";
 import { connect } from "./db/connection";
 
@@ -25,15 +26,13 @@ startServer();
 app.use(
   cors({
     origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    methods: ["GET", "POST", "OPTIONS", "PATCH", "PUT", "DELETE"],
+    credentials: true,
   })
 );
 
 app.use(express.json());
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("hello world com TS");
-});
-
 app.use("/api/auth", authRoutes);
+
+app.use("/api/users", usersRoutes);

@@ -4,10 +4,10 @@ import { authRepository } from "../repositories/auth.repository";
 import createHttpError from "http-errors";
 import { StatusCodes } from "http-status-codes";
 import { hashPassword, verifyPassword } from "../utils/hashing";
-import { userRepository } from "../repositories/user.repository";
 import { formatError } from "../utils/formatResponse";
 import { UserStatus } from "../constants/enums";
 import { generateToken } from "../utils/jwt";
+import { usersRepository } from "../repositories/users.repository";
 
 interface createUserProps {
   username: string;
@@ -21,7 +21,7 @@ interface LoginUserProps {
 }
 
 const authRepositoryInstance = new authRepository();
-const userRepositoryInstance = new userRepository();
+const usersRepositoryInstance = new usersRepository();
 
 export class authService {
   public async createUser({ username, email, password }: createUserProps): Promise<void> {
@@ -29,7 +29,7 @@ export class authService {
       const hashedPassword = await hashPassword(password);
       const values = [username, email, hashedPassword];
 
-      const emailExists = await userRepositoryInstance.findByEmail(email);
+      const emailExists = await usersRepositoryInstance.findByEmail(email);
 
       if (emailExists) {
         throw createHttpError(StatusCodes.BAD_REQUEST, {
@@ -43,7 +43,7 @@ export class authService {
         });
       }
 
-      const usernameExists = await userRepositoryInstance.findByUsername(username);
+      const usernameExists = await usersRepositoryInstance.findByUsername(username);
 
       if (usernameExists) {
         throw createHttpError(StatusCodes.BAD_REQUEST, {
@@ -68,7 +68,7 @@ export class authService {
     password,
   }: LoginUserProps): Promise<{ token: string; username: string }> {
     try {
-      const user = await userRepositoryInstance.findByEmail(email);
+      const user = await authRepositoryInstance.findUserWithPasswordByEmail(email);
 
       if (!user) {
         throw createHttpError(StatusCodes.BAD_REQUEST, {
