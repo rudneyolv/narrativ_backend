@@ -1,11 +1,9 @@
 /** @format */
 
 export interface UserProps {
-  id: number;
-  username: string;
-  password: string;
-  email: string;
-  status: string;
+  id?: number;
+  username?: string;
+  status?: string;
 }
 
 export interface UserProfileProps {

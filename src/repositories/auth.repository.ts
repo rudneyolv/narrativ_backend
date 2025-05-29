@@ -1,13 +1,11 @@
 /** @format */
 
 import pool from "../db/connection";
-import { UserProps } from "../interfaces/users.interfaces";
+import { insertUserProps, PrivateUser } from "../interfaces/auth.interfaces";
 
 export class authRepository {
-  public async insertUser(user: any): Promise<any> {
-    if (!Array.isArray(user)) {
-      throw new Error("Expected an array of values");
-    }
+  public async insertUser(userData: insertUserProps): Promise<PrivateUser> {
+    const { username, email, hashed_password } = userData;
 
     const query = `
       INSERT INTO users (username, email, password)
@@ -15,11 +13,13 @@ export class authRepository {
       RETURNING *;
     `;
 
-    const result = await pool.query(query, user);
-    return result;
+    const values = [username, email, hashed_password];
+
+    const result = await pool.query(query, values);
+    return result.rows[0];
   }
 
-  public async findUserWithPasswordByEmail(email: string): Promise<UserProps | null> {
+  public async findUserWithPasswordByEmail(email: string): Promise<PrivateUser | null> {
     const query = "SELECT * FROM users WHERE email = $1 LIMIT 1";
     const result = await pool.query(query, [email]);
     return result.rows[0] || null;

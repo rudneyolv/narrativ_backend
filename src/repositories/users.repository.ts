@@ -28,9 +28,10 @@ export class usersRepository {
     return result.rows[0] || null;
   }
 
-  public async findFullProfileByUsername(username: string): Promise<UserWithProfileProps | null> {
+  public async findWithProfileByUsername(username: string): Promise<UserWithProfileProps | null> {
     const query = `
     SELECT 
+      u.id,
       u.username, 
       u.status,
       up.profile_image_url,

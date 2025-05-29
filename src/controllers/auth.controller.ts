@@ -2,7 +2,7 @@
 
 import { Request, Response } from "express";
 import { authService } from "../services/auth.service";
-import { registerSchema } from "../schemas/registerSchema";
+import { registerSchema, RegisterUserBody } from "../schemas/registerSchema";
 import createHttpError from "http-errors";
 import { StatusCodes } from "http-status-codes";
 import { formatError, formatSuccess } from "../utils/formatResponse";
@@ -12,7 +12,10 @@ import { logError } from "../utils/debug/logError";
 
 const authServiceInstance = new authService();
 export class AuthController {
-  public async registerUser(req: Request, res: Response): Promise<Response> {
+  public async registerUser(
+    req: Request<unknown, unknown, RegisterUserBody>,
+    res: Response
+  ): Promise<Response> {
     const { username, email, password, confirm_password } = req.body;
 
     const validationResult = registerSchema.safeParse({
@@ -33,8 +36,16 @@ export class AuthController {
     }
 
     try {
-      await authServiceInstance.createUser({ username, email, password });
-      return res.status(StatusCodes.CREATED).json(formatSuccess("User successfully created"));
+      const createUserProps = {
+        username: username,
+        email: email,
+        password: password,
+      };
+
+      await authServiceInstance.createUser(createUserProps);
+
+      const successResponse = formatSuccess("success_user_successfully_created");
+      return res.status(StatusCodes.CREATED).json(successResponse);
     } catch (error: unknown) {
       logError("AuthController.registerUser", error);
 
@@ -71,7 +82,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-        maxAge: 10 * 365 * 24 * 60 * 60 * 1000, // 10 anos em milissegundos
+        maxAge: 10 * 365 * 24 * 60 * 60 * 1000, // alterar - 10 anos em milissegundos
       });
 
       res.cookie("username", username, {

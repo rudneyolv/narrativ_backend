@@ -1,20 +1,15 @@
 /** @format */
 
-interface ErrorItem {
-  message?: string;
-  field?: string | number;
-}
+import { ErrorItem, ErrorResponse, SuccessResponse } from "../interfaces/response.interfaces";
 
-// Retorna: { success: false, message: string, errors: ErrorItem[] }
-export const formatError = (message: string, errors: ErrorItem[]) => ({
+export const formatError = (message: string, errors?: ErrorItem[]): ErrorResponse => ({
   success: false,
   message,
-  errors: errors || undefined,
+  errors,
 });
 
-// Retorna: { success: true, message: string, data?: any }
-export const formatSuccess = (message: string, data?: any) => ({
+export const formatSuccess = <T = unknown>(message: string, data?: T): SuccessResponse<T> => ({
   success: true,
   message,
-  ...(data && { data }),
+  ...(data !== undefined && { data }),
 });

@@ -1,3 +1,5 @@
+/** @format */
+
 // validationSchemas.ts (arquivo separado)
 import { z } from "zod";
 
@@ -32,3 +34,5 @@ export const registerSchema = z
     message: "Passwords don't match.",
     path: ["confirm_password"],
   });
+
+export type RegisterUserBody = z.infer<typeof registerSchema>;
